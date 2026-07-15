@@ -157,6 +157,14 @@ and coefficient plots (`ctl_baseline.png`, `deltaT2_10_*.png`, the shape-paramet
 bar chart, and the predicted-vs-observed scatter). See `CLAUDE.md` for the exact
 file names per script.
 
+## Paper methods write-up
+
+`docs/methods_saturation.tex` is a standalone-compilable LaTeX write-up of the
+saturation dose--response estimator (baseline, paired anomaly, profiled
+least-squares fit, and member-replicate / jackknife error propagation), suitable
+for lifting into a paper's supporting information. Build with
+`pdflatex docs/methods_saturation.tex`.
+
 ## Setup
 
 ```bash

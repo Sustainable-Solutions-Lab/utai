@@ -1,0 +1,186 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[margin=1in]{geometry}
+
+% Supporting-information Methods section describing the saturation dose--response
+% estimator. Standalone-compilable (pdflatex); the section body can be lifted
+% directly into a paper's supplement.
+
+\title{Estimation of the temperature dose--response to aerosol release}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Experimental design and notation}
+
+Near-surface air temperature ($T2$, in K) was obtained from an ensemble of
+mesoscale simulations. The design crosses two meteorological \emph{episodes},
+two spatial evaluation \emph{areas} (an urban ``city'' domain and a larger
+``region'' domain), four \emph{release cases} (a no-release control and three
+active cases), and $N$ stochastic \emph{ensemble members}, with output saved at
+hourly resolution over $H$ hours ($H=121$, about five days). In the analyzed
+data $N=3$.
+
+Each release case is characterized by a release rate $r$ (kt\,h$^{-1}$): the
+control has $r=0$, and the three active cases have $r\in\mathcal{R}=\{1,10,100\}$.
+Crucially, the ensemble members are \emph{matched} across release cases: member
+$e$ uses the same perturbed initial conditions in the control and in every active
+case, so member $e$ realizes one common weather trajectory that differs between
+cases only through the release. We denote by $T2_{r,e}(h)$ the temperature for
+release rate $r$, member $e$, at hour $h$.
+
+The estimation below is carried out \emph{independently} for each of the four
+(episode, area) combinations and, within each, largely hour by hour. To keep the
+notation light we describe a single (episode, area); all quantities should be read
+as conditional on it.
+
+\section{Baseline and paired anomaly}
+
+Because the members share meteorology, each temperature can be written
+schematically as
+\begin{equation}
+  T2_{r,e}(h) = \mu_r(h) + m_e(h) + \varepsilon_{r,e}(h),
+  \label{eq:decomp}
+\end{equation}
+where $\mu_r(h)$ is the dose-dependent mean of interest, $m_e(h)$ is a large
+member-specific meteorological offset common to \emph{all} release cases of member
+$e$ at hour $h$, and $\varepsilon_{r,e}(h)$ is residual noise. The offset $m_e(h)$
+inflates the apparent scatter of the raw temperatures but is common to control and
+active cases; it is removed exactly by differencing each active case against the
+control of the \emph{same} member.
+
+We therefore define the baseline temperature as the control ensemble mean,
+\begin{equation}
+  T2_0(h) = \frac{1}{N}\sum_{e=1}^{N} T2_{0,e}(h),
+  \qquad
+  \widehat{\mathrm{SE}}\big[T2_0(h)\big] = \frac{s_0(h)}{\sqrt{N}},
+  \label{eq:baseline}
+\end{equation}
+where $s_0(h)$ is the sample standard deviation (with $N-1$ denominator) of the
+control members at hour $h$, and the \emph{paired anomaly} for each active case as
+\begin{equation}
+  d_{r,e}(h) = T2_{r,e}(h) - T2_{0,e}(h),
+  \qquad r\in\mathcal{R}.
+  \label{eq:anomaly}
+\end{equation}
+Substituting \eqref{eq:decomp} shows that the common $m_e(h)$ cancels in
+\eqref{eq:anomaly}, leaving the release signal plus a small differenced residual.
+The baseline is taken directly from \eqref{eq:baseline} rather than fitted, so it
+cannot trade against the dose--response curve.
+
+\section{Saturation dose--response model}
+
+For each hour we model the paired anomaly as a per-hour amplitude times a
+saturating function of the release rate,
+\begin{equation}
+  d_{r,e}(h) \;=\; A(h)\, g(r;\rho) \;+\; \text{noise},
+  \qquad
+  g(r;\rho) = \frac{1 - e^{-r/\rho}}{\,1 - e^{-10/\rho}\,}.
+  \label{eq:model}
+\end{equation}
+The shape function $g$ has two convenient properties: $g(0;\rho)=0$, so the model
+passes through the origin (no anomaly without release), and $g(10;\rho)=1$, so the
+amplitude $A(h)$ is exactly the temperature perturbation at $10$~kt\,h$^{-1}$
+(reported as $\Delta T2_{10}$). The single shape parameter $\rho$ (the
+\emph{release scale}, in kt\,h$^{-1}$) controls the curvature: as
+$\rho\!\to\!\infty$ the response becomes linear in $r$, while as $\rho\!\to\!0$ it
+saturates immediately; $\rho$ is the release rate at which the response reaches
+$1-1/e\approx 63\%$ of its far-field value. The amplitude $A(h)$ is free at every
+hour, whereas $\rho$ is held \emph{constant across all hours} within an
+(episode, area).\footnote{An alternative power-law shape,
+$g(r;\beta)=(r/10)^{\beta}$, was also fit within the identical framework; it shares
+the properties $g(0)=0$, $g(10)=1$ and the same estimation and uncertainty
+machinery, with $\beta$ in place of $\rho$.}
+
+\section{Estimation by profiled least squares}
+
+Conditional on $\rho$, model \eqref{eq:model} is linear in the per-hour amplitude,
+so each $A(h)$ has a closed-form least-squares solution through the origin:
+\begin{equation}
+  \widehat{A}(h;\rho)
+  = \frac{\sum_{r\in\mathcal{R}}\sum_{e=1}^{N} g(r;\rho)\, d_{r,e}(h)}
+         {\sum_{r\in\mathcal{R}}\sum_{e=1}^{N} g(r;\rho)^2}.
+  \label{eq:Ahat}
+\end{equation}
+The shape parameter is then estimated by profiling: $\widehat{\rho}$ minimizes the
+total residual sum of squares obtained after concentrating out the amplitudes,
+\begin{equation}
+  \widehat{\rho}
+  = \arg\min_{\rho}\;
+    \sum_{h=1}^{H}\sum_{r\in\mathcal{R}}\sum_{e=1}^{N}
+    \Big( d_{r,e}(h) - \widehat{A}(h;\rho)\, g(r;\rho) \Big)^2 .
+  \label{eq:profile}
+\end{equation}
+This reduces the nonlinear fit to a one-dimensional search over the scalar $\rho$
+wrapping the linear step \eqref{eq:Ahat}; the minimization is performed over
+$\log\rho$ for scale invariance. The reported amplitudes are
+$\widehat{A}(h) = \widehat{A}(h;\widehat{\rho})$.
+
+\section{Uncertainty: the ensemble member as the unit of replication}
+
+Because the members are independent, matched realizations, each member supplies a
+complete paired data set and hence one independent estimate of the amplitude. For
+fixed $\rho$ define the per-member through-origin slope
+\begin{equation}
+  u_e(h;\rho)
+  = \frac{\sum_{r\in\mathcal{R}} g(r;\rho)\, d_{r,e}(h)}
+         {\sum_{r\in\mathcal{R}} g(r;\rho)^2}.
+\end{equation}
+The pooled estimate \eqref{eq:Ahat} equals the member mean of these slopes,
+$\widehat{A}(h) = N^{-1}\sum_e u_e(h;\widehat{\rho})$, so its standard error
+conditional on $\rho$ is the standard error of that mean,
+\begin{equation}
+  \widehat{\mathrm{SE}}\big[\widehat{A}(h)\,\big|\,\rho\big]
+  = \frac{1}{\sqrt{N}}
+    \left[\frac{1}{N-1}\sum_{e=1}^{N}\big(u_e(h;\rho)-\overline{u}(h)\big)^2\right]^{1/2},
+  \qquad \overline{u}(h)=\frac{1}{N}\sum_{e} u_e(h;\rho).
+  \label{eq:se_cond}
+\end{equation}
+Estimate \eqref{eq:se_cond} is exact and distribution-free: it makes no
+homoscedasticity or additivity assumption and automatically incorporates the
+correlation induced by the shared control, because the entire difference
+\eqref{eq:anomaly} is contained within each $u_e$.
+
+The uncertainty in the shape parameter $\widehat{\rho}$, and the amplitude
+uncertainty that includes it, are obtained by a delete-one-member jackknife.
+Removing member $e$ in its entirety---its control \emph{and} its active
+cases---preserves the pairing; refitting \eqref{eq:profile}--\eqref{eq:Ahat} on the
+remaining $N-1$ members yields $\widehat{\rho}_{(-e)}$ and
+$\widehat{A}_{(-e)}(h)$. For a statistic $\theta$ (either $\widehat{\rho}$ or
+$\widehat{A}(h)$),
+\begin{equation}
+  \widehat{\mathrm{SE}}_{\mathrm{jack}}[\theta]
+  = \left[\frac{N-1}{N}\sum_{e=1}^{N}
+     \big(\theta_{(-e)}-\overline{\theta}_{(\cdot)}\big)^2\right]^{1/2},
+  \qquad
+  \overline{\theta}_{(\cdot)}=\frac{1}{N}\sum_{e=1}^{N}\theta_{(-e)}.
+  \label{eq:jack}
+\end{equation}
+The jackknife amplitude standard error includes the contribution of $\rho$
+uncertainty; comparing it with the conditional standard error \eqref{eq:se_cond}
+quantifies how much the shared shape parameter adds. All standard errors scale as
+$N^{-1/2}$, so they contract as ensemble members are added.
+
+\paragraph{Reading uncertainty bands.} Shaded intervals in the figures are
+$\pm 1$ standard error. A nominal $95\%$ confidence interval multiplies the
+standard error by a Student-$t$ factor with $N-1$ degrees of freedom; for $N=3$
+this factor is $t_{2,\,0.975}\approx 4.30$, so a $95\%$ interval is roughly four
+times wider than the plotted band. Both the multiplier (toward $1.96$) and the
+standard errors themselves decrease as $N$ grows.
+
+\section{Implementation}
+
+Analyses used Python with NumPy, pandas, and SciPy. The one-dimensional profile
+minimization \eqref{eq:profile} used \texttt{scipy.optimize.minimize\_scalar}
+(bounded Brent method) over $\log\rho$ on $[\log 0.05,\ \log(2\times10^{4})]$. The
+factor $1-e^{-x}$ was evaluated as $-\,\mathrm{expm1}(-x)$ to avoid loss of
+precision at large $\rho$. The procedure was applied separately to each of the
+four (episode, area) combinations, yielding one $\widehat{\rho}$ per combination,
+per-hour amplitudes $\widehat{A}(h)=\Delta T2_{10}(h)$, and the baseline
+$T2_0(h)$ from \eqref{eq:baseline}.
+
+\end{document}
