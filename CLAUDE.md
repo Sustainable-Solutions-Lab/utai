@@ -148,8 +148,12 @@ A 12-panel page (rows = the 4 `(episode, area)` combos, cols = release rate
 `deltaT2_10(h)*(rate/10)**beta` on y, colored by hour and joined in hour order,
 with a 1:1 reference line and per-panel RMSE / correlation. 100 kt/h hugs 1:1
 (r ~0.98-1.00); 1 kt/h is noisy (tiny signal); `region 240527 @ 10 kt/h` bows off
-1:1 (the mid dose the single shared `beta` fits worst). Reads `t2_anomaly_fit.csv`;
-output `scatter_pred_vs_obs.png`.
+1:1 (the mid dose the single shared `beta` fits worst). Takes an optional model
+argument — `python src/scatter_pred_obs.py [power|saturation]` (default `power`):
+`power` reads `t2_anomaly_fit.csv` → `scatter_pred_vs_obs.png`; `saturation` reads
+`t2_saturation_fit.csv` → `scatter_pred_vs_obs_saturation.png` (tighter to 1:1,
+matching its better `r2_anom`; the `region 240527 @ 10 kt/h` panel stays hard under
+both forms).
 
 ### Alternative dose-response shape — exponential saturation (`fit_t2_saturation_anomaly.py`)
 

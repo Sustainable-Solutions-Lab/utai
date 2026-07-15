@@ -2,17 +2,17 @@
 
 For each (episode, area, release_rate) the curve is parameterized by hour h:
   x(h) = observed paired anomaly, mean over members of (T2_exp - T2_ctl) at hour h
-  y(h) = predicted by the fit, deltaT2_10(h) * (release_rate/10) ** beta
+  y(h) = predicted by the fit, deltaT2_10(h) * dose_factor(release_rate)
 Points are colored by hour and joined in hour order, so the 5-day trajectory is
-visible; the 1:1 line is the perfect-prediction reference.
+visible; the 1:1 line is the perfect-prediction reference. Because the fit shares
+one shape parameter across the three release rates, a single rate's curve need not
+lie exactly on 1:1 -- departures show where one dose pulls against the others.
 
-(beta, deltaT2_10 from the paired-anomaly shared-beta fit. Because the fit shares
-one beta across the three release rates, a single rate's curve need not lie exactly
-on 1:1 -- departures show where one dose pulls against the others.)
+Usage:  python src/scatter_pred_obs.py [power|saturation]   (default: power)
+  power       -> reads t2_anomaly_fit.csv     (fit_t2_shared_beta_anomaly.py)
+  saturation  -> reads t2_saturation_fit.csv  (fit_t2_saturation_anomaly.py)
 
-Reads t2_anomaly_fit.csv (run fit_t2_shared_beta_anomaly.py first).
-
-Output: data/output/scatter_pred_vs_obs.png
+Output: data/output/scatter_pred_vs_obs[_saturation].png
 """
 
 from __future__ import annotations
@@ -27,14 +27,33 @@ from matplotlib.colors import Normalize
 
 from fit_t2 import load_data, OUTPUT_DIR, SURFACE, INK, INK_MUTED, AXIS, GRID
 from fit_t2_shared_beta_anomaly import build_anomalies
+from fit_t2_saturation_anomaly import dose_term as sat_dose_term
 
 CMAP = "viridis"
 
+MODELS = {
+    "power": {
+        "csv": "t2_anomaly_fit.csv", "param": "beta",
+        "factor": lambda rate, p: (rate / 10.0) ** p,
+        "out": "scatter_pred_vs_obs.png", "label": "power law",
+    },
+    "saturation": {
+        "csv": "t2_saturation_fit.csv", "param": "release_scale",
+        "factor": lambda rate, p: sat_dose_term(np.asarray(rate, float), p),
+        "out": "scatter_pred_vs_obs_saturation.png", "label": "exp saturation",
+    },
+}
+
 
 def main():
-    fit_path = OUTPUT_DIR / "t2_anomaly_fit.csv"
+    model = sys.argv[1] if len(sys.argv) > 1 else "power"
+    if model not in MODELS:
+        sys.exit(f"unknown model '{model}'; choose from {list(MODELS)}")
+    cfg = MODELS[model]
+
+    fit_path = OUTPUT_DIR / cfg["csv"]
     if not fit_path.exists():
-        sys.exit(f"missing {fit_path} - run src/fit_t2_shared_beta_anomaly.py first")
+        sys.exit(f"missing {fit_path} - run the corresponding fit script first")
 
     df = load_data()
     fit = pd.read_csv(fit_path)
@@ -45,9 +64,11 @@ def main():
     # member-mean observed anomaly per (episode, area, rate, hour)
     obs = (an.groupby(["episode", "area", "release_rate", "hour"])["d"]
            .mean().reset_index().rename(columns={"d": "obs"}))
-    m = obs.merge(fit[["episode", "area", "hour", "deltaT2_10", "beta"]],
+    m = obs.merge(fit[["episode", "area", "hour", "deltaT2_10", cfg["param"]]],
                   on=["episode", "area", "hour"])
-    m["pred"] = m["deltaT2_10"] * (m["release_rate"] / 10.0) ** m["beta"]
+    # dose factor is scalar per (combo, rate) via the shared shape parameter
+    m["pred"] = m["deltaT2_10"] * m.apply(
+        lambda r: cfg["factor"](r["release_rate"], r[cfg["param"]]), axis=1)
 
     episodes = sorted(m["episode"].unique())
     areas = sorted(m["area"].unique())
@@ -108,10 +129,10 @@ def main():
     cbar = fig.colorbar(sm, ax=axes, shrink=0.5, pad=0.02, aspect=40)
     cbar.set_label("hour", color=INK_MUTED, fontsize=9)
     cbar.ax.tick_params(colors=INK_MUTED, labelsize=8)
-    fig.suptitle("Predicted vs. observed paired anomaly, parametric in hour  "
-                 "(line = 1:1)", color=INK, fontsize=14)
+    fig.suptitle(f"Predicted vs. observed paired anomaly, parametric in hour  "
+                 f"({cfg['label']}; line = 1:1)", color=INK, fontsize=14)
 
-    out = OUTPUT_DIR / "scatter_pred_vs_obs.png"
+    out = OUTPUT_DIR / cfg["out"]
     fig.savefig(out, facecolor=SURFACE)
     plt.close(fig)
     print(f"Wrote:\n  {out}")
