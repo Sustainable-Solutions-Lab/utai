@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from fit_t2 import OUTPUT_DIR, SURFACE, INK, AXIS, style_axes
+from fit_t2 import OUTPUT_DIR, SURFACE, INK, AXIS, style_axes, day_ticks
 
 FIT_COLOR = "#2a78d6"   # shared-beta deltaT2_10
 RAW_COLOR = "#eb6834"   # raw r10 anomaly
@@ -79,6 +79,7 @@ def main():
 
             rmsd = float(np.sqrt((g["diff"] ** 2).mean()))
             style_axes(ax, f"{ar} · {ep}   (RMSD {rmsd:.2f} K)", "deltaT2_10 (K)")
+            day_ticks(ax)
             if i < len(episodes) - 1:
                 ax.set_xlabel("")
 

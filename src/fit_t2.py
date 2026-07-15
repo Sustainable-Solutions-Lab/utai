@@ -27,6 +27,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.ticker import MultipleLocator
 from scipy.optimize import curve_fit
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -141,6 +142,13 @@ def run_fits(df: pd.DataFrame) -> pd.DataFrame:
     return out[cols + extra].sort_values(["episode", "area", "hour"]).reset_index(drop=True)
 
 
+def day_ticks(ax):
+    """Hour axis with day-aligned ticks: major every 24 h, minor every 12 h."""
+    ax.xaxis.set_major_locator(MultipleLocator(24))
+    ax.xaxis.set_minor_locator(MultipleLocator(12))
+    ax.grid(True, which="minor", color=GRID, linewidth=0.4, alpha=0.6)
+
+
 def style_axes(ax, title, ylabel):
     ax.set_title(title, color=INK, fontsize=13, loc="left", pad=10)
     ax.set_xlabel("hour", color=INK_MUTED, fontsize=10)
@@ -180,6 +188,7 @@ def plot_coefficient(fits: pd.DataFrame, column: str, ylabel: str, title: str,
                 linewidth=2, label=f"{area} · {episode}",
             )
     style_axes(ax, title, ylabel)
+    day_ticks(ax)
 
     handles = [
         Line2D([0], [0], color=EPISODE_COLOR.get(episode, INK),
