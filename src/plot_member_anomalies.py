@@ -1,11 +1,10 @@
 """Plot the per-member paired anomaly T2_exp - T2_ctl vs hour for one case.
 
 One line per ensemble member (e1/e2/e3) and their mean, for a single
-(episode, area, release_rate), with the fitted T2_scale(h) overlaid. Useful for
-inspecting member spread at a given dose -- e.g. the region 240527 @ 10 kt/h case
-that fits worst. Because T2_scale is the perturbation at 10 kt/h, at rate = 10 the
-overlay is exactly the fit's prediction; at other rates the prediction would be
-T2_scale * dose_factor(rate), but T2_scale itself is still shown for reference.
+(episode, area, release_rate), with the model PREDICTION at that release rate
+overlaid. The prediction is T2_scale(h) * dose_factor(release_rate): at 10 kt/h
+the factor is 1 (so the overlay is T2_scale itself); at 100 kt/h it is scaled up
+by the shared dose-response so predicted and observed are on the same footing.
 
 Usage:  python src/plot_member_anomalies.py [episode] [area] [release_rate] [model]
         defaults: 240527 region 10 power        (model: power | saturation)
@@ -17,15 +16,22 @@ from __future__ import annotations
 
 import sys
 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 from fit_t2 import load_data, OUTPUT_DIR, SURFACE, INK, AXIS, style_axes, day_ticks
 from fit_t2_shared_beta_anomaly import build_anomalies
+from fit_t2_saturation_anomaly import dose_term as sat_dose_term
 
 MEMBER_COLOR = {"e1": "#2a78d6", "e2": "#008300", "e3": "#eb6834"}
-T2SCALE_COLOR = "#4a3aa7"  # violet, distinct from members and the mean
-FIT_CSV = {"power": "t2_anomaly_fit.csv", "saturation": "t2_saturation_fit.csv"}
+PRED_COLOR = "#4a3aa7"  # violet, distinct from members and the mean
+MODELS = {
+    "power": {"csv": "t2_anomaly_fit.csv", "param": "beta",
+              "factor": lambda rate, p: (rate / 10.0) ** p},
+    "saturation": {"csv": "t2_saturation_fit.csv", "param": "release_scale",
+                   "factor": lambda rate, p: float(sat_dose_term(np.array([rate]), p)[0])},
+}
 
 
 def main():
@@ -33,8 +39,9 @@ def main():
     area = sys.argv[2] if len(sys.argv) > 2 else "region"
     rate = float(sys.argv[3]) if len(sys.argv) > 3 else 10.0
     model = sys.argv[4] if len(sys.argv) > 4 else "power"
-    if model not in FIT_CSV:
-        sys.exit(f"unknown model '{model}'; choose from {list(FIT_CSV)}")
+    if model not in MODELS:
+        sys.exit(f"unknown model '{model}'; choose from {list(MODELS)}")
+    cfg = MODELS[model]
 
     df = load_data()
     an = build_anomalies(df)
@@ -57,15 +64,17 @@ def main():
     ax.plot(mean["hour"], mean["d"], color=INK, linewidth=2, linestyle="--",
             label="member mean")
 
-    # overlay fitted T2_scale(h) (= deltaT2_10 column) from the chosen model
-    fit_path = OUTPUT_DIR / FIT_CSV[model]
+    # overlay the model prediction at this release rate:
+    # T2_scale(h) * dose_factor(rate).  factor = 1 at 10 kt/h.
+    fit_path = OUTPUT_DIR / cfg["csv"]
     if not fit_path.exists():
         sys.exit(f"missing {fit_path} - run the {model} fit script first")
     fit = pd.read_csv(fit_path)
     fit["episode"] = fit["episode"].astype(str)
     fg = fit[(fit["episode"] == episode) & (fit["area"] == area)].sort_values("hour")
-    ax.plot(fg["hour"], fg["deltaT2_10"], color=T2SCALE_COLOR, linewidth=2.5,
-            label=f"T2_scale ({model} fit)")
+    factor = cfg["factor"](rate, float(fg[cfg["param"]].iloc[0]))
+    ax.plot(fg["hour"], fg["deltaT2_10"] * factor, color=PRED_COLOR, linewidth=2.5,
+            label=f"predicted @ {rate:g} kt/h ({model})")
 
     style_axes(ax, f"T2_exp - T2_ctl per member — {area} · {episode} @ {rate:g} kt/h",
                "T2_exp - T2_ctl (K)")
