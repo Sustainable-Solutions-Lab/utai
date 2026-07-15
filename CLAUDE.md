@@ -26,6 +26,122 @@ number before the first `_`, divided by 1000. So `1000_5x5`→1, `10000_5x5`→1
 Everything is done **separately** for each of the 4 `(episode, area)` combinations:
 `(240527, city)`, `(240527, region)`, `(240727, city)`, `(240727, region)`.
 
+The scripts implement three progressively better treatments of the same model.
+`fit_t2.py` (per-hour, free `beta`) and `fit_t2_shared_beta.py` (shared `beta`,
+raw fit) are kept for comparison, but the **recommended** method is the
+paired-anomaly fit below — it is the statistically correct treatment of the
+matched ensemble design.
+
+## Recommended method — paired-anomaly shared-beta fit (`fit_t2_shared_beta_anomaly.py`)
+
+### Why paired
+
+The three ensemble members `e1/e2/e3` are the **same weather realization** across
+scenarios (matched initial conditions; only the release differs). So each raw
+temperature decomposes as
+
+```
+T2(dose, member, hour) = mu(dose, hour) + m(member, hour) + eps
+```
+
+where `m(member, hour)` is a large member-specific meteorology offset shared by
+**all** doses of that member at that hour (empirically the ctl-vs-r10 member
+correlation has median +0.93). Fitting raw `T2` and treating the 12 samples as
+independent (the earlier scripts) leaves `m` in the residual, which does **not**
+bias `deltaT2_10`/`beta` (the design is balanced and crossed, so `m` is orthogonal
+to dose) but **inflates their standard errors**. Subtracting the matched control
+removes `m` exactly.
+
+Note `m(member, hour)` is estimated *per hour*, not once: because every hour is fit
+independently, the member offset is free to change hour to hour — correct, since the
+ensemble members diverge chaotically over the 5-day run.
+
+### Model
+
+Per `(episode, area)`:
+
+- **Baseline** (the `release_rate = 0` value, i.e. `T2_0` by definition):
+  ```
+  T2_0(h)     = mean over ctl members of T2(h)
+  SE[T2_0(h)] = sd_ctl(h) / sqrt(n_ctl)
+  ```
+  This is reported/plotted as the control mean +/- SE (it is not a fitted
+  intercept — pinning the baseline to the control keeps the nonlinear curve from
+  trading against it).
+
+- **Paired anomaly** for each release member (`s` = dose in {1,10,100} kt/h):
+  ```
+  d_{s,e}(h) = T2_{s,e}(h) - T2_{ctl,e}(h)          (matched by member e)
+  ```
+  fit **through the origin** (no anomaly at `release_rate = 0`):
+  ```
+  d = deltaT2_10(h) * (release_rate / 10) ** beta
+  ```
+  with `beta` **constant per (episode, area)** and `deltaT2_10` free per hour.
+
+### Fitting — profiled (separable) least squares
+
+For a fixed `beta`, set `x_s = (r_s/10)**beta`; the model is linear in
+`deltaT2_10`, so each hour's slope is closed-form through the origin,
+`deltaT2_10(h) = sum(x_s d_{s,e}) / sum(x_s^2)`. Only the scalar `beta` needs a
+search — `scipy.optimize.minimize_scalar` (bounded `[0.01, 10]`) minimizing the
+total residual SS over all 121 hours. This is the "nonlinear fit for beta wrapping
+a linear regression" structure.
+
+### Error propagation — the ensemble member is the unit of replication
+
+Each member `e` supplies a *complete* paired data set, hence one independent
+through-origin slope
+```
+u_e(h) = sum_s x_s d_{s,e}(h) / sum_s x_s^2 .
+```
+Therefore
+```
+deltaT2_10(h)          = mean_e u_e(h)                       (= pooled slope)
+SE[deltaT2_10(h) | beta] = sd(u_e, ddof=1) / sqrt(n_members)
+```
+This conditional SE is **exact and distribution-free**: it needs no
+homoscedasticity or additivity assumption, and it automatically carries the
+shared-control correlation because the whole difference lives inside each `u_e`.
+
+`beta` and the **beta-inclusive** SE of `deltaT2_10` come from a
+**delete-one-member jackknife**: refit with each whole member removed (its ctl
+*and* its experiments drop together, so the pairing is preserved), giving
+`beta_(-e)` and `deltaT2_10_(-e)(h)`, then
+```
+SE_jk = sqrt( (n-1)/n * sum_e ( theta_(-e) - mean_e theta_(-e) )^2 ).
+```
+The jackknife total SE of `deltaT2_10(h)` includes `beta`'s contribution; comparing
+it to the conditional SE shows how much `beta` uncertainty adds (here: little,
+because `beta` is pooled over 121 hours and tightly pinned).
+
+All SEs scale as `~1/sqrt(n_members)`, so they tighten as ensemble members are
+added — the reason this framework is worth getting right now with `n = 3`.
+
+### Reading the bands (small-n note)
+
+Plot bands are **+/- 1 standard error** (`z = 1`). A 95% confidence interval
+multiplies the SE by Student-t with `n_members - 1` dof; with `n = 3` that factor
+is `t_{2, 0.975} ≈ 4.30` (and the jackknife itself has only 2 dof), so a 95% band
+is ~4x wider than what is drawn. As members are added the multiplier falls toward
+1.96 and the SEs themselves shrink.
+
+### Outputs (`data/output/`)
+
+- `t2_anomaly_fit.csv` / `.xlsx` — per `(episode, area, hour)`: `T2_0`, `T2_0_se`,
+  `deltaT2_10`, `deltaT2_10_se_cond` (conditional on `beta`),
+  `deltaT2_10_se_total` (jackknife, incl. `beta`), `beta`, `r2_anom`, member/ctl
+  counts. The `.xlsx` has a second `beta` sheet; `t2_anomaly_beta.csv` is that
+  summary (`beta`, jackknife `beta_se`).
+- `ctl_baseline.png` — baseline `T2_0` = control mean +/- 1 SE vs. hour.
+- `deltaT2_10_anomaly.png` — `deltaT2_10` vs. hour, +/- 1 SE band (incl. `beta`).
+- `beta_anomaly.png` — the four `beta` with jackknife-SE whiskers.
+
+Fitted `beta` (paired anomaly): city `0.183`/`0.159`, region `0.486`/`0.283`
+(240527/240727) — all sub-linear (saturating dose-response).
+
+## Earlier methods (kept for comparison)
+
 ## Model
 
 For each `(episode, area)` and **each hour `h` independently**, fit across the 12
@@ -163,9 +279,11 @@ Regenerates every file in `data/output/`.
 ```
 data/input/T2_summary.csv   source data (read-only)
 data/output/                generated CSV/XLSX/PNG (git-ignored)
+src/fit_t2_shared_beta_anomaly.py  RECOMMENDED: paired-anomaly shared-beta fit
 src/fit_t2.py               per-hour fit: load → fit → write CSV/XLSX → plot
-src/fit_t2_shared_beta.py   shared-beta variant (profiled least squares)
+src/fit_t2_shared_beta.py   shared-beta variant, raw fit (profiled least squares)
 src/ctl_anomaly.py          model-free control means + release-minus-ctl anomalies
+src/overlay_r10.py          overlay r10 anomaly on shared-beta deltaT2_10
 .venv/                      numpy pandas scipy statsmodels scikit-learn matplotlib openpyxl
 ```
 
