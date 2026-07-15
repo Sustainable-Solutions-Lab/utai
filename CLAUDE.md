@@ -151,6 +151,46 @@ with a 1:1 reference line and per-panel RMSE / correlation. 100 kt/h hugs 1:1
 1:1 (the mid dose the single shared `beta` fits worst). Reads `t2_anomaly_fit.csv`;
 output `scatter_pred_vs_obs.png`.
 
+### Alternative dose-response shape — exponential saturation (`fit_t2_saturation_anomaly.py`)
+
+Same paired-anomaly framework and error propagation, different curve. Instead of
+the power law it uses an exponential-saturation shape:
+
+```
+deltaT2 = T2_scale * (1 - exp(-release_rate/release_scale))
+                   / (1 - exp(-10/release_scale))
+```
+
+- factor = 0 at `release_rate = 0` (fit through the origin) and = 1 at
+  `release_rate = 10`, so `T2_scale(h)` is again the perturbation at 10 kt/h —
+  kept in the `deltaT2_10` column so the two forms are directly comparable;
+- `release_scale` (kt/h, one constant per `(episode, area)`) is the curvature
+  knob, playing `beta`'s role: `release_scale -> infinity` gives a linear dose
+  response, `release_scale -> 0` saturates immediately. It is the release rate at
+  which the response reaches `1 - 1/e` (~63%) of its far-field value.
+
+Fitting is identical profiled least squares — `release_scale` searched in log
+space (`[0.05, 2e4]` kt/h) with the same member-replicate + jackknife SEs.
+`(1 - exp(-x))` is evaluated with `-expm1(-x)` to avoid cancellation at large
+`release_scale`. The dose factor is 0 at `rate = 0`.
+
+This shape fits **better** than the power law (median per-hour `r2_anom`):
+
+| episode | area   | release_scale (kt/h) | r2 (sat.) | r2 (power) |
+|---------|--------|----------------------|-----------|------------|
+| 240527  | city   | 3.3                  | 0.61      | 0.31       |
+| 240527  | region | 23.9                 | 0.57      | 0.53       |
+| 240727  | city   | 1.8                  | 0.06      | 0.03       |
+| 240727  | region | 8.8                  | 0.78      | 0.75       |
+
+City saturates fast (small `release_scale`); region is closer to linear over the
+1-100 kt/h range (large `release_scale`, and `240527 region` is only weakly
+constrained — large jackknife SE).
+
+Outputs (`data/output/`): `t2_saturation_fit.csv` / `.xlsx` (per-hour `deltaT2_10`
++ SEs and `release_scale`; second `release_scale` sheet), `t2_saturation_scale.csv`,
+`deltaT2_10_saturation.png`, `release_scale_saturation.png`.
+
 ## Earlier methods (kept for comparison)
 
 ## Model
@@ -291,6 +331,7 @@ Regenerates every file in `data/output/`.
 data/input/T2_summary.csv   source data (read-only)
 data/output/                generated CSV/XLSX/PNG (git-ignored)
 src/fit_t2_shared_beta_anomaly.py  RECOMMENDED: paired-anomaly shared-beta fit
+src/fit_t2_saturation_anomaly.py   alt shape: exponential saturation (release_scale)
 src/fit_t2.py               per-hour fit: load → fit → write CSV/XLSX → plot
 src/fit_t2_shared_beta.py   shared-beta variant, raw fit (profiled least squares)
 src/ctl_anomaly.py          model-free control means + release-minus-ctl anomalies

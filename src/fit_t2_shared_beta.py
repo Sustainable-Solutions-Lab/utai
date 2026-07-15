@@ -131,7 +131,8 @@ def fit_combo(sub: pd.DataFrame):
     return per_hour, summary
 
 
-def plot_beta_bars(summary: pd.DataFrame, path):
+def plot_beta_bars(summary: pd.DataFrame, path, value_col="beta", se_col="beta_se",
+                   ylabel="beta", title="Shared beta per (episode, area)"):
     fig, ax = plt.subplots(figsize=(7, 4.5), dpi=150)
     fig.patch.set_facecolor(SURFACE)
     labels = [f"{a}\n{e}" for a, e in zip(summary["area"], summary["episode"])]
@@ -139,16 +140,19 @@ def plot_beta_bars(summary: pd.DataFrame, path):
     colors = [EPISODE_COLOR.get(e, INK) for e in summary["episode"]]
     # hatch denotes area (city hatched, region solid) to match the line plots
     hatch = ["//" if a == "city" else "" for a in summary["area"]]
-    bars = ax.bar(x, summary["beta"], yerr=summary["beta_se"], capsize=4,
+    vals = summary[value_col].to_numpy(float)
+    ses = summary[se_col].to_numpy(float)
+    bars = ax.bar(x, vals, yerr=ses, capsize=4,
                   color=colors, edgecolor=INK, linewidth=0.6)
     for b, h in zip(bars, hatch):
         b.set_hatch(h)
-    for xi, (bv, se) in enumerate(zip(summary["beta"], summary["beta_se"])):
-        ax.text(xi, bv + (se if np.isfinite(se) else 0) + 0.02,
-                f"{bv:.3f}", ha="center", va="bottom", color=INK, fontsize=9)
+    off = 0.02 * (np.nanmax(vals) if np.nanmax(vals) > 0 else 1.0)
+    for xi, (bv, se) in enumerate(zip(vals, ses)):
+        ax.text(xi, bv + (se if np.isfinite(se) else 0) + off,
+                f"{bv:.3g}", ha="center", va="bottom", color=INK, fontsize=9)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
-    style_axes(ax, "Shared beta per (episode, area)", "beta")
+    style_axes(ax, title, ylabel)
     ax.set_xlabel("")
     fig.tight_layout()
     fig.savefig(path, facecolor=SURFACE)
