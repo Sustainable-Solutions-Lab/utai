@@ -183,4 +183,60 @@ four (episode, area) combinations, yielding one $\widehat{\rho}$ per combination
 per-hour amplitudes $\widehat{A}(h)=\Delta T2_{10}(h)$, and the baseline
 $T2_0(h)$ from \eqref{eq:baseline}.
 
+\section{Daily-maximum temperature reduction}
+
+The same estimator is applied to the effect of the release on the \emph{daily
+high} temperature. Within each (episode, area) the hourly series is divided into
+$D=5$ consecutive 24-hour blocks; the first hour is discarded so that hours
+$2,\dots,121$ form five complete blocks. Let $\mathcal{H}_d$ index the hours of
+block $d$. The daily maximum for release rate $r$, member $e$, day $d$ is
+\begin{equation}
+  M_{r,e,d} = \max_{h\in\mathcal{H}_d} T2_{r,e}(h),
+\end{equation}
+and the paired daily-maximum reduction is
+\begin{equation}
+  R_{r,e,d} = M_{0,e,d} - M_{r,e,d}.
+  \label{eq:reduction}
+\end{equation}
+Equation \eqref{eq:reduction} is written control-minus-experiment, so that a
+lowering of the daily high is a \emph{positive} reduction---the opposite sign
+convention to the hourly anomaly \eqref{eq:anomaly}. The difference is taken
+within a member, so the two maxima may fall at different hours and the shared
+member meteorology still largely cancels.
+
+The reduction is fit with the same saturation shape as \eqref{eq:model},
+\begin{equation}
+  R_{r,e,d} = A\, g(r;\rho),
+  \qquad
+  g(r;\rho) = \frac{1 - e^{-r/\rho}}{\,1 - e^{-10/\rho}\,},
+  \label{eq:tmax_model}
+\end{equation}
+through the origin over $r\in\{1,10,100\}$. Here the amplitude $A$ (the reduction
+at $10$~kt\,h$^{-1}$) and the release scale $\rho$ are \emph{scalars} for the
+fitting group rather than hour-indexed. Two groupings are reported:
+\begin{itemize}
+  \item a \textbf{pooled} fit combining all days, giving one $(A,\rho)$ per
+        (episode, area);
+  \item a \textbf{per-day} fit, giving one $(A,\rho)$ per (episode, area, day).
+\end{itemize}
+Estimation and uncertainty are otherwise unchanged. For fixed $\rho$ the amplitude
+is the closed-form through-origin slope $\widehat{A}=\sum g R / \sum g^2$
+(Eq.~\eqref{eq:Ahat} with the per-hour index removed and $R$ in place of $d$);
+$\rho$ is obtained by the same log-space profile minimization
+\eqref{eq:profile}; the amplitude standard error conditional on $\rho$ follows
+from the per-member through-origin slopes \eqref{eq:se_cond}; and $\rho$ together
+with the $\rho$-inclusive amplitude standard error come from the
+delete-one-member jackknife \eqref{eq:jack}. The baseline daily high itself,
+$M_{0,e,d}$ averaged over members, is reported separately with its ensemble
+standard error.
+
+\paragraph{Identifiability of the per-day scale.} The pooled fit uses
+$3\times3\times5 = 45$ paired reductions and yields a well-determined $\rho$; the
+per-day fit uses only $3\times3 = 9$ and frequently cannot resolve the curvature,
+with $\widehat{\rho}$ running toward the upper search bound on days whose
+dose--response is effectively linear. The per-day \emph{amplitude} $A$ remains
+well behaved and is the quantity to interpret day by day; the per-day \emph{scale}
+should be read together with its (often large) jackknife interval, or $\rho$ held
+common across days.
+
 \end{document}

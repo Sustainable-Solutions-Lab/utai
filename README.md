@@ -123,6 +123,38 @@ as members are added.
   `region · 240527 @ 10 kt/h` mid-dose is genuinely harder to fit under either
   shape (not a curve-shape artifact).
 
+## Daily-maximum temperature extreme
+
+A companion analysis targets the **daily high** temperature rather than the hourly
+mean. The hourly series is split into five 24-hour blocks (hour 1 is dropped so
+hours 2–121 form five clean blocks); for each ensemble member and day we take the
+daily maximum `T2`, and form the paired reduction
+
+```
+Tmax_red = max_day T2(ctl, member) - max_day T2(exp, member)
+```
+
+written **control minus experiment**, so cooling of the daily high is **positive**
+(the opposite sign to the hourly anomaly). The reduction is fit with the same
+saturation shape (through the origin, amplitude `Tmax_red10` = reduction at
+10 kt/h, one `release_scale` per fit), using the same profiled least-squares plus
+member-replicate / jackknife machinery. Two groupings are produced: **pooled over
+all days** (one fit per episode×area) and **per day**.
+
+Pooled fit (all cooling; `release_scale` ordering matches the hourly fit):
+
+| episode | area | `Tmax_red10` (K) | `release_scale` (kt/h) | r² |
+|---------|------|------------------|------------------------|----|
+| 240527 | city | 1.98 | 4.6 | 0.50 |
+| 240527 | region | 1.16 | 20.6 | 0.64 |
+| 240727 | city | 0.72 | 6.5 | 0.25 |
+| 240727 | region | 0.86 | 10.4 | 0.53 |
+
+The per-day **amplitude** is robust and shows real day-to-day variation, but the
+per-day **`release_scale`** is often weakly identified (only 9 points per day) and
+can run to the search bound on near-linear days — interpret it with its jackknife
+interval, or share `release_scale` across days. Full method: `docs/methods_saturation.tex`.
+
 ## Scripts
 
 All read `data/input/T2_summary.csv` and write to `data/output/` (git-ignored).
@@ -133,6 +165,7 @@ Run any script with the project virtualenv, e.g. `.venv/bin/python src/<script>.
 | `fit_t2_shared_beta_anomaly.py` | **Recommended.** Paired-anomaly fit, power-law shape, shared `beta`. |
 | `fit_t2_saturation_anomaly.py` | Paired-anomaly fit, exponential-saturation shape, shared `release_scale`. |
 | `fit_tmax_saturation.py` | **Daily-max extreme.** Per-member daily high (24-h blocks, hour 1 dropped), control-minus-experiment reduction, saturation fit grouped over all days and per day. Sign convention `ctl - exp`, so cooling is positive. |
+| `plot_tmax_raw.py` | Raw daily-max reductions from `tmax_reductions.csv`: reduction vs release rate (log x, colored by day) and vs day (colored by rate). |
 | `ctl_anomaly.py` | Model-free control means and paired release-minus-ctl anomalies (sanity check). |
 | `scatter_pred_obs.py` | Predicted-vs-observed anomaly, parametric in hour (12 panels). Arg: `power` (default) or `saturation`. |
 | `overlay_r10.py` | Overlays the raw r10 anomaly on the fitted `deltaT2_10` (cross-check). |
@@ -162,9 +195,9 @@ file names per script.
 
 `docs/methods_saturation.tex` is a standalone-compilable LaTeX write-up of the
 saturation dose--response estimator (baseline, paired anomaly, profiled
-least-squares fit, and member-replicate / jackknife error propagation), suitable
-for lifting into a paper's supporting information. Build with
-`pdflatex docs/methods_saturation.tex`.
+least-squares fit, member-replicate / jackknife error propagation, and the
+daily-maximum reduction extension), suitable for lifting into a paper's supporting
+information. Build with `pdflatex docs/methods_saturation.tex`.
 
 ## Setup
 
