@@ -48,9 +48,10 @@ read it first. This file is the operational cheat-sheet for making changes.
   `ctl_mean_se.png`, `anomaly_r1/r10/r100.png`.
 - **`overlay_r10.py`** → `deltaT2_10_vs_anomaly_r10.png`, `r10_vs_deltaT2_10.csv`
   (reads `fit_t2_shared_beta.py` + `ctl_anomaly.py` outputs).
-- **`plot_member_anomalies.py [episode] [area] [release_rate]`** (default
-  `240527 region 10`) → `member_anomalies_<episode>_<area>_r<rate>.png`: the three
-  per-member `T2_exp - T2_ctl` traces plus their mean, for one case.
+- **`plot_member_anomalies.py [episode] [area] [release_rate] [model]`** (default
+  `240527 region 10 power`) → `member_anomalies_<episode>_<area>_r<rate>_<model>.png`:
+  the three per-member `T2_exp - T2_ctl` traces, their mean, and the fitted
+  `T2_scale(h)` (= `deltaT2_10`) from the chosen model overlaid.
 - **`fit_t2.py`** (earlier, free-`beta` per hour) → `t2_hourly_fits.csv`/`.xlsx`,
   `T2_0.png`, `deltaT2_10.png`, `beta.png`.
 - **`fit_t2_shared_beta.py`** (earlier, shared `beta` on raw `T2`) →
