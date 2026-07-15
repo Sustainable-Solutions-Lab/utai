@@ -52,6 +52,16 @@ read it first. This file is the operational cheat-sheet for making changes.
   Daily max over 24-h blocks (hour 1 dropped; `day = (hour-2)//24+1`, days 1..5);
   reduction sign is **`ctl - exp`** (cooling positive) — opposite the hourly
   anomaly scripts. Amplitude column `Tmax_red10` = reduction at 10 kt/h.
+- **`fit_tmax_day_saturation.py`** (daily-max, joint day x dose saturation) →
+  `tmax_day_saturation_fit.csv`/`.xlsx`, `tmax_day_saturation_amplitude.png`,
+  `tmax_day_saturation_day_scale.png`, `tmax_day_saturation_release_scale.png`,
+  `tmax_day_saturation_curves.png`, `tmax_day_saturation_pred_vs_obs.png`.
+  Model: `Tmax_red = T_max_scale_10 * (1-exp(-(day-0.5)/day_scale)) * dose_term(rate,
+  release_scale)`; one 3-parameter fit per (episode, area). Reuses
+  `daily_max_reductions` from `fit_tmax_saturation.py` (same day blocking and
+  `ctl - exp` sign). `T_max_scale_10` is the **day-asymptotic** amplitude — quote
+  `Tmax_red10_day5` when `day_scale_at_bound` is non-empty (`lower` = no buildup,
+  `upper` = linear-in-day ridge where `day_scale` and the amplitude are degenerate).
 - **`plot_tmax_raw.py`** (raw daily-max reductions; reads `tmax_reductions.csv`)
   → `tmax_raw_vs_rate.png` (Tmax_red vs release rate, log x, colored by day),
   `tmax_raw_vs_day.png` (Tmax_red vs day, colored by release rate).

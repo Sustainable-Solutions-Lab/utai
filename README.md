@@ -155,6 +155,45 @@ per-day **`release_scale`** is often weakly identified (only 9 points per day) a
 can run to the search bound on near-linear days — interpret it with its jackknife
 interval, or share `release_scale` across days. Full method: `docs/methods_saturation.tex`.
 
+### Joint day × dose fit
+
+`fit_tmax_day_saturation.py` replaces the per-day fits with a **saturating buildup
+over the episode**, multiplying the dose response by a day factor and fitting the
+three parameters jointly — four regressions, one per episode × area:
+
+```
+Tmax_red = T_max_scale_10
+         * (1 - exp(-(day - 0.5)/day_scale))
+         * (1 - exp(-release_rate/release_scale)) / (1 - exp(-10/release_scale))
+```
+
+`T_max_scale_10` is the reduction at 10 kt/h **once the buildup has saturated**
+(day → ∞); the reduction on day 5 (`Tmax_red10_day5`) is the more directly
+comparable number. Fitting is the same profiled least squares — the amplitude is
+closed-form through the origin, so only the two scales are searched (log space,
+multi-start Nelder–Mead, verified against a brute-force grid) — with the same
+member-replicate / jackknife errors.
+
+| episode | area | `T_max_scale_10` (K) | `day_scale` (d) | `release_scale` (kt/h) | `Tmax_red10_day5` (K) | r² |
+|---------|------|----------------------|-----------------|------------------------|-----------------------|----|
+| 240527 | city | 2.91 | 1.92 | 5.7 | 2.63 | 0.76 |
+| 240527 | region | 1.36 | 1.12 | 23.8 | 1.34 | 0.83 |
+| 240727 | city | 0.72 | ≤0.02 (pegged) | 6.5 | 0.72 | 0.25 |
+| 240727 | region | 0.98 | 0.62 | 10.5 | 0.98 | 0.66 |
+
+The day factor buys a large r² gain for **240527** (0.50 → 0.76 city, 0.64 → 0.83
+region): that episode's cooling genuinely builds over ~1–2 days. **240727 · city**
+pegs `day_scale` at the lower bound — no buildup is resolved, the day factor
+collapses to 1, and the fit reproduces the pooled fit exactly (r² 0.25), which is
+the model nesting its predecessor rather than a failure.
+
+Two identifiability caveats, both flagged in the script's `day_scale_at_bound`
+column and printed at run time. With only days 1–5, `day_scale` ≫ 5 makes the day
+factor ≈ `(day − 0.5)/day_scale`, which trades off against `T_max_scale_10` so only
+their ratio is constrained; `day_scale` → 0 means no buildup at all. A pegged scale
+also has a degenerate (often exactly zero) jackknife SE — `Tmax_red10_day5` stays
+well determined in both cases and is the safer quantity to quote.
+
 ## Scripts
 
 All read `data/input/T2_summary.csv` and write to `data/output/` (git-ignored).
@@ -165,6 +204,7 @@ Run any script with the project virtualenv, e.g. `.venv/bin/python src/<script>.
 | `fit_t2_shared_beta_anomaly.py` | **Recommended.** Paired-anomaly fit, power-law shape, shared `beta`. |
 | `fit_t2_saturation_anomaly.py` | Paired-anomaly fit, exponential-saturation shape, shared `release_scale`. |
 | `fit_tmax_saturation.py` | **Daily-max extreme.** Per-member daily high (24-h blocks, hour 1 dropped), control-minus-experiment reduction, saturation fit grouped over all days and per day. Sign convention `ctl - exp`, so cooling is positive. |
+| `fit_tmax_day_saturation.py` | **Daily-max, joint day × dose.** Saturating buildup over days times the saturating dose response; 3 parameters per episode × area. Reuses `daily_max_reductions`. |
 | `plot_tmax_raw.py` | Raw daily-max reductions from `tmax_reductions.csv`: reduction vs release rate (log x, colored by day) and vs day (colored by rate). |
 | `ctl_anomaly.py` | Model-free control means and paired release-minus-ctl anomalies (sanity check). |
 | `scatter_pred_obs.py` | Predicted-vs-observed anomaly, parametric in hour (12 panels). Arg: `power` (default) or `saturation`. |
