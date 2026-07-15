@@ -52,6 +52,9 @@ read it first. This file is the operational cheat-sheet for making changes.
   Daily max over 24-h blocks (hour 1 dropped; `day = (hour-2)//24+1`, days 1..5);
   reduction sign is **`ctl - exp`** (cooling positive) — opposite the hourly
   anomaly scripts. Amplitude column `Tmax_red10` = reduction at 10 kt/h.
+- **`plot_tmax_raw.py`** (raw daily-max reductions; reads `tmax_reductions.csv`)
+  → `tmax_raw_vs_rate.png` (Tmax_red vs release rate, log x, colored by day),
+  `tmax_raw_vs_day.png` (Tmax_red vs day, colored by release rate).
 - **`ctl_anomaly.py`** → `ctl_mean_se.csv`, `t2_anomalies.csv`/`.xlsx`,
   `ctl_mean_se.png`, `anomaly_r1/r10/r100.png`.
 - **`overlay_r10.py`** → `deltaT2_10_vs_anomaly_r10.png`, `r10_vs_deltaT2_10.csv`
