@@ -12,7 +12,7 @@ Usage:  python src/scatter_pred_obs.py [power|saturation]   (default: power)
   power       -> reads t2_anomaly_fit.csv     (fit_t2_shared_beta_anomaly.py)
   saturation  -> reads t2_saturation_fit.csv  (fit_t2_saturation_anomaly.py)
 
-Output: data/output/scatter_pred_vs_obs[_saturation].png
+Output: data/output/scatter_pred_vs_obs_{power,saturation}.png
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ MODELS = {
     "power": {
         "csv": "t2_anomaly_fit.csv", "param": "beta",
         "factor": lambda rate, p: (rate / 10.0) ** p,
-        "out": "scatter_pred_vs_obs.png", "label": "power law",
+        "out": "scatter_pred_vs_obs_power.png", "label": "power law",
     },
     "saturation": {
         "csv": "t2_saturation_fit.csv", "param": "release_scale",
