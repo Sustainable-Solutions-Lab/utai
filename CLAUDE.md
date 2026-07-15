@@ -44,6 +44,14 @@ read it first. This file is the operational cheat-sheet for making changes.
 - **`scatter_pred_obs.py [power|saturation]`** → `scatter_pred_vs_obs_power.png` /
   `scatter_pred_vs_obs_saturation.png` (suffixed by model; reads the matching
   `*_fit.csv`).
+- **`fit_tmax_saturation.py`** (daily-max reduction, saturation, grouped + per-day)
+  → `tmax_reductions.csv`, `tmax_saturation_grouped.csv`, `tmax_saturation_byday.csv`,
+  `tmax_saturation_fit.xlsx` (sheets `grouped`/`byday`/`reductions`),
+  `tmax_amplitude_grouped.png`, `tmax_release_scale_grouped.png`,
+  `tmax_amplitude_byday.png`, `tmax_release_scale_byday.png`, `tmax_pred_vs_obs.png`.
+  Daily max over 24-h blocks (hour 1 dropped; `day = (hour-2)//24+1`, days 1..5);
+  reduction sign is **`ctl - exp`** (cooling positive) — opposite the hourly
+  anomaly scripts. Amplitude column `Tmax_red10` = reduction at 10 kt/h.
 - **`ctl_anomaly.py`** → `ctl_mean_se.csv`, `t2_anomalies.csv`/`.xlsx`,
   `ctl_mean_se.png`, `anomaly_r1/r10/r100.png`.
 - **`overlay_r10.py`** → `deltaT2_10_vs_anomaly_r10.png`, `r10_vs_deltaT2_10.csv`

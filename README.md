@@ -132,6 +132,7 @@ Run any script with the project virtualenv, e.g. `.venv/bin/python src/<script>.
 |--------|---------|
 | `fit_t2_shared_beta_anomaly.py` | **Recommended.** Paired-anomaly fit, power-law shape, shared `beta`. |
 | `fit_t2_saturation_anomaly.py` | Paired-anomaly fit, exponential-saturation shape, shared `release_scale`. |
+| `fit_tmax_saturation.py` | **Daily-max extreme.** Per-member daily high (24-h blocks, hour 1 dropped), control-minus-experiment reduction, saturation fit grouped over all days and per day. Sign convention `ctl - exp`, so cooling is positive. |
 | `ctl_anomaly.py` | Model-free control means and paired release-minus-ctl anomalies (sanity check). |
 | `scatter_pred_obs.py` | Predicted-vs-observed anomaly, parametric in hour (12 panels). Arg: `power` (default) or `saturation`. |
 | `overlay_r10.py` | Overlays the raw r10 anomaly on the fitted `deltaT2_10` (cross-check). |
