@@ -140,6 +140,17 @@ is ~4x wider than what is drawn. As members are added the multiplier falls towar
 Fitted `beta` (paired anomaly): city `0.183`/`0.159`, region `0.486`/`0.283`
 (240527/240727) — all sub-linear (saturating dose-response).
 
+### Predicted-vs-observed diagnostic — `src/scatter_pred_obs.py`
+
+A 12-panel page (rows = the 4 `(episode, area)` combos, cols = release rate
+1/10/100 kt/h) plotting, **parametric in hour**, the member-mean observed anomaly
+`mean_e(T2_exp - T2_ctl)(h)` on x against the fitted prediction
+`deltaT2_10(h)*(rate/10)**beta` on y, colored by hour and joined in hour order,
+with a 1:1 reference line and per-panel RMSE / correlation. 100 kt/h hugs 1:1
+(r ~0.98-1.00); 1 kt/h is noisy (tiny signal); `region 240527 @ 10 kt/h` bows off
+1:1 (the mid dose the single shared `beta` fits worst). Reads `t2_anomaly_fit.csv`;
+output `scatter_pred_vs_obs.png`.
+
 ## Earlier methods (kept for comparison)
 
 ## Model
@@ -284,6 +295,7 @@ src/fit_t2.py               per-hour fit: load → fit → write CSV/XLSX → pl
 src/fit_t2_shared_beta.py   shared-beta variant, raw fit (profiled least squares)
 src/ctl_anomaly.py          model-free control means + release-minus-ctl anomalies
 src/overlay_r10.py          overlay r10 anomaly on shared-beta deltaT2_10
+src/scatter_pred_obs.py     predicted-vs-observed anomaly, parametric in hour
 .venv/                      numpy pandas scipy statsmodels scikit-learn matplotlib openpyxl
 ```
 
