@@ -68,8 +68,8 @@ read it first. This file is the operational cheat-sheet for making changes.
 - **`plot_t2_raw.py [release_rate]`** (default `10`; raw input traces, reads
   `T2_summary.csv` via `fit_t2.load_data`) → `t2_raw_members_r<rate>.png`: four
   panels (episode x area), each with the three ensemble members' experimental `T2`
-  at that release rate (solid, color = member) and the same members' control `T2`
-  (dashed, same colors). Color encodes **member** here, not episode — the panel
+  at that release rate (dashed, color = member) and the same members' control `T2`
+  (solid, same colors). Color encodes **member** here, not episode — the panel
   grid already separates episodes.
 - **`ctl_anomaly.py`** → `ctl_mean_se.csv`, `t2_anomalies.csv`/`.xlsx`,
   `ctl_mean_se.png`, `anomaly_r1/r10/r100.png`.

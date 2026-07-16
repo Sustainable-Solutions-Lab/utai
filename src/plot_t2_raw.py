@@ -1,8 +1,8 @@
 """Raw T2 traces: experiment vs. its paired control, per ensemble member.
 
 Four panels, one per (episode, area).  Each panel has 6 lines: the three
-ensemble members' experimental T2 at a single release rate (solid, one color
-per member) and the same members' control T2 (dashed, same colors).
+ensemble members' experimental T2 at a single release rate (dashed, one color
+per member) and the same members' control T2 (solid, same colors).
 
 Usage:
     python src/plot_t2_raw.py [release_rate]   # default 10; 0 is the control
@@ -52,7 +52,7 @@ def plot_raw(df, rate: float, path: Path):
             panel = df[(df["episode"] == episode) & (df["area"] == area)]
             for member in members:
                 color = MEMBER_COLOR[member]
-                for rr, style, width in ((rate, "-", 1.0), (0.0, "--", 0.8)):
+                for rr, style, width in ((rate, "--", 1.0), (0.0, "-", 0.8)):
                     sub = panel[
                         (panel["ens"] == member) & (panel["release_rate"] == rr)
                     ].sort_values("hour")
@@ -67,11 +67,11 @@ def plot_raw(df, rate: float, path: Path):
             day_ticks(ax)
 
     handles = [
-        Line2D([0], [0], color=MEMBER_COLOR[m], linestyle="-", linewidth=1.4,
+        Line2D([0], [0], color=MEMBER_COLOR[m], linestyle="--", linewidth=1.4,
                label=f"{m} · {rate:g} kt/h")
         for m in members
     ] + [
-        Line2D([0], [0], color=MEMBER_COLOR[m], linestyle="--", linewidth=1.2,
+        Line2D([0], [0], color=MEMBER_COLOR[m], linestyle="-", linewidth=1.2,
                label=f"{m} · control")
         for m in members
     ]
@@ -81,7 +81,7 @@ def plot_raw(df, rate: float, path: Path):
         bbox_to_anchor=(0.5, -0.01),
     )
     fig.suptitle(
-        f"Raw T2 vs. hour — experiment at {rate:g} kt/h (solid) vs. paired control (dashed)",
+        f"Raw T2 vs. hour — experiment at {rate:g} kt/h (dashed) vs. paired control (solid)",
         color=INK, fontsize=14, x=0.01, ha="left",
     )
     fig.tight_layout(rect=(0, 0.05, 1, 0.97))
