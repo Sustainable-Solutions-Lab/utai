@@ -3,6 +3,20 @@
 Project overview, the model, the statistics, and findings live in **`README.md`** —
 read it first. This file is the operational cheat-sheet for making changes.
 
+## Workflow — work on `main`
+
+This is a small single-author project. **Everything lives on `main`.**
+
+- **Do not create branches, worktrees, or pull requests unless Ken specifically
+  approves it for that piece of work.** Default to committing straight to `main`.
+  A standing background-agent rule forbids the agent itself from pushing to `main`
+  — so commit locally, say so, and let Ken push. Do not route around that rule by
+  inventing a branch and a PR: that is the thing this section exists to prevent.
+- Generated files under `data/output/` are git-ignored, so **git never moves the
+  figures**. A script run from a worktree writes them to *that worktree's*
+  `data/output/`, not to the main checkout — a recurring source of "where did my
+  plots go?". One more reason to work in the main checkout.
+
 ## Environment
 
 - Use the project virtualenv interpreter directly: **`.venv/bin/python`** (packages
