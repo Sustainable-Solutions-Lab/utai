@@ -121,6 +121,7 @@ $\log\rho$ for scale invariance. The reported amplitudes are
 $\widehat{A}(h) = \widehat{A}(h;\widehat{\rho})$.
 
 \section{Uncertainty: the ensemble member as the unit of replication}
+\label{sec:uncertainty}
 
 Because the members are independent, matched realizations, each member supplies a
 complete paired data set and hence one independent estimate of the amplitude. For
@@ -184,6 +185,7 @@ per-hour amplitudes $\widehat{A}(h)=\Delta T2_{10}(h)$, and the baseline
 $T2_0(h)$ from \eqref{eq:baseline}.
 
 \section{Daily-maximum temperature reduction}
+\label{sec:tmax}
 
 The same estimator is applied to the effect of the release on the \emph{daily
 high} temperature. Within each (episode, area) the hourly series is divided into
@@ -238,5 +240,152 @@ dose--response is effectively linear. The per-day \emph{amplitude} $A$ remains
 well behaved and is the quantity to interpret day by day; the per-day \emph{scale}
 should be read together with its (often large) jackknife interval, or $\rho$ held
 common across days.
+
+\section{Joint day--dose model for the daily maximum}
+
+The pooled and per-day fits of Section~\ref{sec:tmax} sit at two extremes: the
+pooled fit ignores any systematic evolution of the reduction over the episode,
+while the per-day fit spends a separate amplitude \emph{and} scale on each day and
+so resolves neither well. The joint model interpolates between them by letting the
+reduction \emph{build up} over the episode with its own time scale, while sharing
+one amplitude and one dose curvature across all days.
+
+\subsection{Model}
+
+The paired daily-maximum reduction $R_{r,e,d}$ of \eqref{eq:reduction} is modelled
+as a product of a day factor and a dose factor,
+\begin{equation}
+  R_{r,e,d} \;=\; A_\infty\, f(d;\tau)\, g(r;\rho) \;+\; \text{noise},
+  \label{eq:daydose}
+\end{equation}
+with the dose factor $g$ exactly as in \eqref{eq:tmax_model} and the day factor
+\begin{equation}
+  f(d;\tau) \;=\; 1 - e^{-(d-0.5)/\tau}.
+  \label{eq:dayterm}
+\end{equation}
+Three parameters are estimated per (episode, area), giving four regressions in
+total, each fit to all $3\times3\times5=45$ paired reductions:
+\begin{itemize}
+  \item $A_\infty$ (K), the \emph{day-asymptotic amplitude}: the reduction at
+        $10$~kt\,h$^{-1}$ once the buildup has fully saturated ($d\to\infty$,
+        $f\to1$). Because $g(10;\rho)=1$ by construction, $A_\infty$ is read
+        directly in kelvin. It is reported as \texttt{Tmax\_scale10}.
+  \item $\tau$ (days), the \emph{day scale}: the e-folding time of the buildup.
+        $\tau\to0$ places the full reduction on day~1; $\tau\gg D$ makes the
+        reduction grow nearly linearly across the episode.
+  \item $\rho$ (kt\,h$^{-1}$), the release scale, with the same meaning as in
+        \eqref{eq:model}.
+\end{itemize}
+
+The offset $-0.5$ in \eqref{eq:dayterm} places the origin of the buildup half a day
+before the first daily maximum, so that $f$ vanishes there rather than at $d=1$;
+day~1 therefore carries a partial response $f(1;\tau)=1-e^{-0.5/\tau}$ instead of
+being forced to zero, which would be physically wrong for a release that is already
+active during the first block. Days are integers $d\in\{1,\dots,5\}$ from the
+blocking of Section~\ref{sec:tmax}.
+
+Note that \eqref{eq:daydose} is \emph{separable}: the day factor multiplies the
+dose factor, so the shape of the dose--response is assumed identical on every day
+and only its overall size grows with $d$. Equivalently, the model asserts that the
+release scale $\rho$ does not itself drift over the episode.
+
+\subsection{Estimation}
+
+For fixed $(\tau,\rho)$ the model \eqref{eq:daydose} is linear in $A_\infty$.
+Writing the design value of each observation as
+$x_{r,e,d}=f(d;\tau)\,g(r;\rho)$, the amplitude has the closed-form through-origin
+solution
+\begin{equation}
+  \widehat{A}_\infty(\tau,\rho)
+  = \frac{\sum_{r,e,d} x_{r,e,d}\, R_{r,e,d}}{\sum_{r,e,d} x_{r,e,d}^{2}},
+  \label{eq:amp_joint}
+\end{equation}
+so only the two scales are searched. They minimize the residual sum of squares
+after concentrating out the amplitude,
+\begin{equation}
+  (\widehat{\tau},\widehat{\rho})
+  = \arg\min_{\tau,\rho}\;
+    \sum_{r,e,d}\Big(R_{r,e,d} - \widehat{A}_\infty(\tau,\rho)\,f(d;\tau)\,g(r;\rho)\Big)^2 .
+  \label{eq:profile_joint}
+\end{equation}
+
+The search is carried out over $(\log\tau,\log\rho)$ for scale invariance, by
+Nelder--Mead simplex, from a $4\times4$ grid of starting points --- $\tau_0 \in
+\{0.3, 1, 3, 30\}$~days crossed with $\rho_0 \in \{1, 10, 100, 1000\}$~kt\,h$^{-1}$
+--- with the lowest attained objective retained. The multi-start guards against the
+local minima that the ridge described below can induce. Because Nelder--Mead is
+unconstrained, the objective clamps its argument into the box
+\begin{equation}
+  \log\tau \in [\log 0.02,\ \log 10^{3}], \qquad
+  \log\rho \in [\log 0.05,\ \log(2\times10^{4})],
+\end{equation}
+and the returned optimum is clipped to the same box, so a reported optimum is
+always attainable. Convergence used \texttt{xatol}~$=10^{-4}$,
+\texttt{fatol}~$=10^{-10}$, and at most $2000$ iterations. As elsewhere, factors of
+the form $1-e^{-x}$ were evaluated as $-\,\mathrm{expm1}(-x)$.
+
+The coefficient of determination is $r^2 = 1 - \mathrm{SSR}/\mathrm{SST}$ with
+$\mathrm{SST}$ taken about the mean of the observed reductions.
+
+\subsection{Reported quantity: the day-5 reduction}
+
+Because $A_\infty$ is an extrapolation to $d\to\infty$ --- beyond the five days
+actually simulated --- the reduction on the final simulated day,
+\begin{equation}
+  R_{10,\,d=5} \;=\; \widehat{A}_\infty\, f(5;\widehat{\tau}),
+  \label{eq:day5}
+\end{equation}
+is also reported (\texttt{Tmax\_red10\_day5}) and is the quantity to quote whenever
+the day scale is poorly determined. It is an interpolation within the simulated
+range and stays well determined even when $A_\infty$ and $\tau$ individually do
+not.
+
+\subsection{Uncertainty}
+
+Uncertainty follows the same scheme as Section~\ref{sec:uncertainty}, with the
+ensemble member again the unit of replication. Conditional on both scales, the
+per-member through-origin slope is
+\begin{equation}
+  u_e = \frac{\sum_{r,d} x_{r,e,d}\, R_{r,e,d}}{\sum_{r,d} x_{r,e,d}^{2}},
+\end{equation}
+and the amplitude standard error conditional on $(\tau,\rho)$ is the standard error
+of the mean of $\{u_e\}$, exactly as in \eqref{eq:se_cond} (reported as
+\texttt{Tmax\_scale10\_se\_cond}).
+
+Standard errors for $\widehat{\tau}$ and $\widehat{\rho}$, the $\rho$- and
+$\tau$-inclusive standard error of $\widehat{A}_\infty$, and the standard error of
+the day-5 reduction \eqref{eq:day5} all come from the delete-one-member jackknife
+\eqref{eq:jack}. Removing member $e$ removes its control and all of its active
+cases together, preserving the pairing, and the full three-parameter fit
+\eqref{eq:amp_joint}--\eqref{eq:profile_joint} --- including the complete
+multi-start search --- is repeated on the remaining $N-1$ members. For the day-5
+reduction the jackknife replicate is formed as
+$\widehat{A}_{\infty,(-e)}\, f(5;\widehat{\tau}_{(-e)})$, so that correlation
+between the amplitude and the day scale is carried through rather than ignored.
+
+\subsection{Identifiability of the day scale}
+
+With only $D=5$ days the day scale is not always resolvable, and the failure is
+structural rather than numerical. For $\tau \gg D$ the day factor linearizes,
+\begin{equation}
+  f(d;\tau) \;=\; 1-e^{-(d-0.5)/\tau} \;\approx\; \frac{d-0.5}{\tau},
+\end{equation}
+so that \eqref{eq:daydose} depends on the two parameters only through the ratio
+$A_\infty/\tau$. Any $(A_\infty,\tau)$ sharing that ratio fits equally well: the
+likelihood has a flat ridge, and $A_\infty$ and $\tau$ are individually
+unidentified while their ratio --- and hence the fitted reduction on any simulated
+day --- remains perfectly well constrained. The opposite extreme, $\tau$ at its
+lower bound, means no buildup is resolved at all: the day factor is effectively
+flat at unity and the model collapses to the pure dose saturation
+\eqref{eq:tmax_model}.
+
+Rather than let this pass silently, the fit records whether $\log\widehat{\tau}$
+has landed on either end of its search box (within $10^{-3}$ in log units), as
+\texttt{day\_scale\_at\_bound} $\in$ \{\texttt{lower}, \texttt{upper}\}. A pegged
+scale also produces a degenerate jackknife standard error --- often exactly zero,
+because every delete-one replicate is pinned at the same bound --- which must not
+be read as precision. When \texttt{day\_scale\_at\_bound} is non-empty, $A_\infty$
+and $\tau$ should not be interpreted separately, and the day-5 reduction
+\eqref{eq:day5} should be quoted in place of $A_\infty$.
 
 \end{document}
