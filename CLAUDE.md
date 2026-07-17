@@ -79,6 +79,35 @@ This is a small single-author project. **Everything lives on `main`.**
 - **`plot_tmax_raw.py`** (raw daily-max reductions; reads `tmax_reductions.csv`)
   → `tmax_raw_vs_rate.png` (Tmax_red vs release rate, log x, colored by day),
   `tmax_raw_vs_day.png` (Tmax_red vs day, colored by release rate).
+- **`plot_daily_ensemble_stats.py`** (daily ensemble spread of the three daily
+  temperature quantities, in **°C**) → `daily_ensemble_stats.csv`/`.xlsx` (one row
+  per episode x area x release_rate x day — ctl **included** — with 12 columns:
+  `{Tmean,Tmax,Tmin}_{ensmean,ensmedian,ensmin,ensmax}`), and three plot pages
+  `daily_ensemble_mean_temp.png`, `daily_ensemble_max_temp.png`,
+  `daily_ensemble_min_temp.png`. Same day blocking as the tmax scripts (hour 1
+  dropped; `day = (hour-2)//24+1`, days 1..5). Each page is a **6-row x 2-col**
+  grid — rows `(240527: 1/10/100; 240727: 1/10/100)`, cols `(city, region)`;
+  every panel overlays the experiment (episode-colored) beside its matching
+  control (gray), with per day a dot at the ensemble median, an × at the ensemble
+  mean, and whiskers from ensemble min to max. The y-range is shared across the
+  three rows of a given **episode** and framed to that episode's own whisker
+  extremes, rounded outward to the nearest `YSTEP = 5` °C (`ylim_for`) — so each
+  page carries two y-scales (240527 top, 240727 bottom), each tight to its data
+  (e.g. Tmax: 240527 35–50, 240727 30–45 °C). Exposes reusable `member_daily()`
+  (per-member daily Tmean/Tmax/Tmin in °C), `ylim_for(stats, q, step, include_zero)`,
+  `_style`, `_draw_series`.
+- **`plot_daily_ensemble_diffs.py`** (companion difference view; imports the
+  helpers above) → `daily_ensemble_diffs.csv`/`.xlsx` (one row per episode x area
+  x release_rate x day, rates **1/10/100** only, 12 columns
+  `d{Tmean,Tmax,Tmin}_{ensmean,ensmedian,ensmin,ensmax}`) and three pages
+  `daily_ensemble_mean_temp_diff.png`, `daily_ensemble_max_temp_diff.png`,
+  `daily_ensemble_min_temp_diff.png`. Difference is per-member **`exp - ctl`**
+  (aligned on episode/area/ens/day — cooling negative; opposite the `ctl - exp`
+  tmax scripts), then ensemble median (dots joined by a line) with min–max
+  whiskers (no mean marker). Each page is a **2-row (episode) x 2-col (area)**
+  grid; every panel overlays rates 1/10/100 at each day (no offset), **colored by
+  rate** (blue/orange/green) about a zero line. Y-axis is shared across all four
+  panels on a page, nearest 1 °C, always spanning 0.
 - **`plot_t2_raw.py [release_rate]`** (default `10`; raw input traces, reads
   `T2_summary.csv` via `fit_t2.load_data`) → `t2_raw_members_r<rate>.png`: four
   panels (episode x area), each with the three ensemble members' experimental `T2`
